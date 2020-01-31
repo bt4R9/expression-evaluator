@@ -1,0 +1,67 @@
+<!doctyle html>
+  <html>
+
+  <head>
+    <style>
+      body {
+        font: 18px sans-serif;
+        background-color: #000;
+      }
+
+      .link {
+        fill: none;
+        stroke: #fff;
+      }
+
+      .border {
+        fill: none;
+        shape-rendering: crispEdges;
+        stroke: #aaa;
+      }
+
+      .node {
+        stroke: #fff;
+      }
+
+      .operand,
+      .operator {
+        fill: #fff;
+      }
+
+      .operator {
+        stroke: crimson;
+      }
+
+      #expression {
+        border: 0;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+        outline: thin;
+        font-size: 20px;
+        font-family: monospace;
+        padding: 4px;
+        text-align: center;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        border-radius: 6px;
+      }
+
+      #result {
+        color: #fff;
+        position: absolute;
+        bottom: 30px;
+        font-size: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+
+  <body>
+    <input id="expression" value="5 * (10 - 5) ^ 3" />
+    <div id="result"></div>
+    <script src="dist/bundle.js"></script>
+  </body>
+
+  </html>

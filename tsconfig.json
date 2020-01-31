@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "target": "ES5",
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
+    "outDir": "build"
+  },
+  "include": [
+    "./src/*.ts"
+  ]
+}
