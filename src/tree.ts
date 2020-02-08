@@ -1,4 +1,5 @@
-import { RPN } from "./types";
+import { RPN, Operator } from "./types";
+import { expression_exec } from './expression';
 
 export class Node {
   constructor(
@@ -29,31 +30,13 @@ export const tree_build = (rpn: RPN) => {
   return stack[0] as Node;
 };
 
-export const tree_exec = (root: Node) => {
-  function traverse(node: Node | number | null): number {
-    if (!node) {
-      return 0;
-    }
+export const tree_exec = (node: Node | null): number => {
+  if (!node) return 0;
+  if (typeof node === 'number') return node;
 
-    if (typeof node === "number") {
-      return node;
-    }
-
-    switch (node.value) {
-      case "+":
-        return traverse(node.left) + traverse(node.right);
-      case "-":
-        return traverse(node.left) - traverse(node.right);
-      case "*":
-        return traverse(node.left) * traverse(node.right);
-      case "/":
-        return traverse(node.left) / traverse(node.right);
-      case "^":
-        return traverse(node.left) ** traverse(node.right);
-      default:
-        return 0;
-    }
-  }
-
-  return traverse(root);
+  return expression_exec(
+    node.value as Operator,
+    tree_exec(node.left),
+    tree_exec(node.right)
+  );
 };

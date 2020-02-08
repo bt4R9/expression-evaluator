@@ -1,10 +1,9 @@
 import * as d3 from 'd3';
 import { tokenizr } from './tokenizr';
-import { parse } from './parser';
-import { rpn_exec } from './rpn';
-import { tree_build } from './tree';
-import { isValidSyntax, isOperator } from './utils';
-import { RPN } from './types';
+import { rpn_build, rpn_exec } from './rpn';
+import { isOperator, isFunction } from './utils';
+import { RPN, FN } from './types';
+import { FNS, expression_exec } from './expression';
 
 const input = <HTMLInputElement>document.getElementById('expression');
 const result = <HTMLDivElement>document.getElementById('result');
@@ -21,18 +20,9 @@ render(input.value);
 
 function render(input: string) {
   const tokens = tokenizr(input);
-
-  if (!isValidSyntax(tokens)) {
-    return;
-  }
-
-  const rpn = parse(tokens);
+  const rpn = rpn_build(tokens);
   const root = rpnToD3Tree(rpn);
   const value = rpn_exec(rpn);
-
-  console.log('Tokens', tokens);
-  console.log('RPN', rpn);
-  console.log('Tree', tree_build(rpn))
 
   document.querySelectorAll('svg').forEach((selector) => selector.remove());
   result.textContent = String(value);
@@ -103,11 +93,41 @@ function render(input: string) {
   });
 }
 
+/*
+
+  for (let item of rpn) {
+    if (isFunction(String(item))) {
+      let [length, exec] = FNS[item as FN] as [number, Function];
+      let args: number[] = [];
+      while (length-- > 0) args.unshift(stack.pop());
+      stack.push(exec(...args));
+    } else if (typeof item !== 'number') {
+      let r = stack.pop();
+      let l = stack.pop();
+      stack.push(expression_exec(item as Operator, l, r));
+    } else {
+      stack.push(item);
+    }
+  }
+
+
+*/
+
 function rpnToD3Tree(rpn: RPN) {
   let stack: any[] = [];
 
   for (let t of rpn) {
-    if (typeof t === "number") {
+    if (isFunction(String(t))) {
+      let [length] = FNS[t as FN] as [number, Function];
+      let args: number[] = [];
+      while (length-- > 0) args.unshift(stack.pop());
+      stack.push({
+        name: t,
+        children: args.map(v => {
+          return typeof v === 'number' ? { name: v } : v;
+        })
+      });
+    } else if (typeof t === "number") {
       stack.push(t);
     } else {
       let r = stack.pop();
@@ -119,6 +139,7 @@ function rpnToD3Tree(rpn: RPN) {
           '*': 'mul',
           '+': 'sum',
           '-': 'sub',
+          ':': 'div',
           '/': 'div',
           '^': 'pow'
         })[t];
