@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import { tokenizr } from './tokenizr';
-import { rpn_build, rpn_exec } from './rpn';
+import { rpn_build, rpn_exec, rpc_intermediate_results } from './rpn';
 import { isOperator, isFunction } from './utils';
 import { RPN, FN } from './types';
-import { FNS, expression_exec } from './expression';
+import { FNS } from './expression';
 
 const input = <HTMLInputElement>document.getElementById('expression');
 const result = <HTMLDivElement>document.getElementById('result');
@@ -93,28 +93,9 @@ function render(input: string) {
   });
 }
 
-/*
-
-  for (let item of rpn) {
-    if (isFunction(String(item))) {
-      let [length, exec] = FNS[item as FN] as [number, Function];
-      let args: number[] = [];
-      while (length-- > 0) args.unshift(stack.pop());
-      stack.push(exec(...args));
-    } else if (typeof item !== 'number') {
-      let r = stack.pop();
-      let l = stack.pop();
-      stack.push(expression_exec(item as Operator, l, r));
-    } else {
-      stack.push(item);
-    }
-  }
-
-
-*/
-
 function rpnToD3Tree(rpn: RPN) {
   let stack: any[] = [];
+  const results = rpc_intermediate_results(rpn);
 
   for (let t of rpn) {
     if (isFunction(String(t))) {
@@ -122,7 +103,7 @@ function rpnToD3Tree(rpn: RPN) {
       let args: number[] = [];
       while (length-- > 0) args.unshift(stack.pop());
       stack.push({
-        name: t,
+        name: t + ` (${results.shift()})`,
         children: args.map(v => {
           return typeof v === 'number' ? { name: v } : v;
         })
@@ -148,7 +129,7 @@ function rpnToD3Tree(rpn: RPN) {
       }
 
       stack.push({
-        name,
+        name: name + ` (${results.shift()})`,
         children: [typeof l === 'number' ? { name: l } : l, typeof r === 'number' ? { name: r } : r]
       });
     }

@@ -1,6 +1,7 @@
-import { RPN, Token, FN, Operator } from './types';
+import { RPN, Token, FN, Operator, Paren } from './types';
 import { expression_exec, FNS } from './expression';
 import { isFunction } from './utils';
+import { Stack } from './stack';
 
 const OperatorPriority = new Map<string, number>([
   ['^', 6],
@@ -14,40 +15,37 @@ const OperatorPriority = new Map<string, number>([
 
 export const rpn_build = (infix_tokens: Token[]) => {
   const queue = [];
-  const stack = [];
+  const stack = new Stack<Operator | Paren | FN>();
 
-  for (let token of infix_tokens) {
+  for (const token of infix_tokens) {
     if (isFunction(String(token))) {
-      stack.push(token);
+      stack.push(token as FN);
       continue;
     }
 
     if (token === '(') {
-      stack.push('(');
+      stack.push(token);
       continue;
     }
 
     if (token === ')') {
-      while (stack[stack.length - 1] !== '(') {
+      while (stack.peek() !== '(') {
         queue.push(stack.pop());
       }
 
       stack.pop();
 
-      if (isFunction(String(stack[stack.length - 1]))) {
+      if (isFunction(String(stack.peek()))) {
         queue.push(stack.pop());
       }
-
-      continue;
     }
 
     if (OperatorPriority.has(String(token))) {
-      while (stack.length !== 0 && (
-        OperatorPriority.get(String(token)) <= OperatorPriority.get(String(stack[stack.length - 1]))
-      )) {
+      while (!stack.empty() && OperatorPriority.get(String(token)) <= OperatorPriority.get(String(stack.peek()))) {
         queue.push(stack.pop());
       }
-      stack.push(token);
+
+      stack.push(token as Operator);
       continue;
     }
 
@@ -56,22 +54,22 @@ export const rpn_build = (infix_tokens: Token[]) => {
     }
   }
 
-  while (stack.length !== 0) {
+  while (!stack.empty()) {
     queue.push(stack.pop());
   }
-  console.log(queue);
+
   return queue as RPN;
 }
 
 export const rpn_exec = (rpn: RPN) => {
-  let stack: number[] = [];
+  const stack = new Stack<number>();
 
   for (let item of rpn) {
     if (isFunction(String(item))) {
-      let [length, exec] = FNS[item as FN] as [number, Function];
+      let [length, fn_exec] = FNS[item as FN] as [number, Function];
       let args: number[] = [];
       while (length-- > 0) args.unshift(stack.pop());
-      stack.push(exec(...args));
+      stack.push(fn_exec(...args));
     } else if (typeof item !== 'number') {
       let r = stack.pop();
       let l = stack.pop();
@@ -81,5 +79,31 @@ export const rpn_exec = (rpn: RPN) => {
     }
   }
 
-  return stack[0];
+  return stack.pop();
+}
+
+export const rpc_intermediate_results = (rpn: RPN) => {
+  const queue: number[] = [];
+  const stack = new Stack<number>();
+
+  for (let item of rpn) {
+    if (isFunction(String(item))) {
+      let [length, fn_exec] = FNS[item as FN] as [number, Function];
+      let args: number[] = [];
+      while (length-- > 0) args.unshift(stack.pop());
+      const result = fn_exec(...args);
+      queue.push(result);
+      stack.push(result);
+    } else if (typeof item !== 'number') {
+      let r = stack.pop();
+      let l = stack.pop();
+      const result = expression_exec(item as Operator, l, r);
+      queue.push(result);
+      stack.push(result);
+    } else {
+      stack.push(item);
+    }
+  }
+
+  return queue;
 }

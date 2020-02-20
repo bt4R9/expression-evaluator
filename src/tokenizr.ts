@@ -34,7 +34,7 @@ export const tokenizr = (input: string) => {
       throw new Error(`Unexpected token ${char}`)
     }
   }
-  console.log(tokens);
+
   return tokens;
 }
 
